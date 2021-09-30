@@ -1,0 +1,17 @@
+{
+	"name": "web-component-google-data-map", 
+	"resources": {
+		"data-map.scss": {
+			"url": "data-map.scss"
+		}, 
+		"clustererplus.js": {
+			"url": "clustererplus.js"
+		}, 
+		"data-map.tpl": {
+			"url": "data-map.tpl"
+		}, 
+		"data-map.js": {
+			"url": "data-map.js"
+		}
+	}
+}

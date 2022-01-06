@@ -36,6 +36,12 @@ window.addEventListener("load", function () {
 		created: function() {
 			this.create();
 		},
+		ready: function() {
+			// if you have no records, the watcher is never called and we never initialize a draw
+			if (!this.records.length) {
+				this.draw();
+			}
+		},
 		methods: {
 			draw: function() {
 				var el = this.$refs.map;

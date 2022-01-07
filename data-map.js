@@ -1,4 +1,5 @@
 // https://developers.google.com/maps/documentation/javascript/marker-clustering
+// currently not clear, but the records watcher is _always_ triggered which means we will always draw. not sure why, is it for the initial value?
 
 window.addEventListener("load", function () {
 	
@@ -35,12 +36,6 @@ window.addEventListener("load", function () {
 		},
 		created: function() {
 			this.create();
-		},
-		ready: function() {
-			// if you have no records, the watcher is never called and we never initialize a draw
-			if (!this.records.length) {
-				this.draw();
-			}
 		},
 		methods: {
 			draw: function() {
@@ -274,15 +269,17 @@ window.addEventListener("load", function () {
 						});
 					}
 					
-					var location = this.records[0];
-					if (location) {
-						var center = {
-							lat: location[self.cell.state.latitudeField ? self.cell.state.latitudeField : "latitude"],
-							lng: location[self.cell.state.longitudeField ? self.cell.state.longitudeField : "longitude"]
-							
+					if (this.records.length > 0) {
+						var location = this.records[0];
+						if (location) {
+							var center = {
+								lat: location[self.cell.state.latitudeField ? self.cell.state.latitudeField : "latitude"],
+								lng: location[self.cell.state.longitudeField ? self.cell.state.longitudeField : "longitude"]
+								
+							}
 						}
+						self.map.setCenter(center);
 					}
-					self.map.setCenter(center);
 				}
 			},
 			configurator: function() {

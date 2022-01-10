@@ -13,6 +13,15 @@ window.addEventListener("load", function () {
 		},
 		created: function() {
 			this.create();
+		},
+		methods: {
+			addDynamicMarker: function() {
+				if (!this.cell.state.dynamicMarkers) {
+					Vue.set(this.cell.state, "dynamicMarkers", []);
+				}
+				this.cell.state.dynamicMarkers.push({});
+				console.log("added dynamic", this.cell.state.dynamicMarkers);
+			}
 		}
 	});
 	
@@ -24,7 +33,14 @@ window.addEventListener("load", function () {
 				map: null,
 				clusterer: null,
 				// a mapping for the markers, based on either lat/lng or (preferably) id field
-				markers: {}
+				markers: {},
+				// any component that is created must be properly destroyed, otherwise they will remain in memory
+				// the issue we had: we drew a graph inside a popup in a page-arbitrary. but that popup was never properly destroyed because it is not part of the DOM etc
+				// so once the the popup is rendered the first time, page-arbitrary will add the component to the list of page components
+				// at that point, we unload the map and reload it, but now the first element at the cell id is no longer the map but the popup that was never unloaded
+				// this means we don't get the correct configuration
+				// apart from the memory leak this caused, it was annoying
+				componentsToDestroy: []
 			}	
 		},
 		activate: function(done) {
@@ -36,6 +52,11 @@ window.addEventListener("load", function () {
 		},
 		created: function() {
 			this.create();
+		},
+		beforeDestroy: function() {
+			this.componentsToDestroy.splice(0).forEach(function(x) {
+				x.$destroy();
+			})	
 		},
 		methods: {
 			draw: function() {
@@ -117,8 +138,9 @@ window.addEventListener("load", function () {
 					var self = this;
 					// check which markers have been updated, if we have a marker that was not updated, it might need to be removed
 					var markersUpdated = [];
+					// make sure we don't show multiple popups
+					var showingMarkers = [];
 					this.records.forEach(function(record) {
-						console.log('record', record);
 						var lat = record[self.cell.state.latitudeField ? self.cell.state.latitudeField : "latitude"];
 						var lng = record[self.cell.state.longitudeField ? self.cell.state.longitudeField : "longitude"];
 						var radius = self.cell.state.radiusField ? record[self.cell.state.radiusField] : null;
@@ -130,7 +152,6 @@ window.addEventListener("load", function () {
 						var marker = self.markers[key];
 						var properties = { position: {lat: Number(lat), lng: Number(lng)} };
 						if (!marker) {
-							console.log('no marker');
 							var svgCheckmark = "M10.453 14.016l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM12 2.016q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z";
 							var svgCheckmarkScale = 2;
 							
@@ -149,6 +170,42 @@ window.addEventListener("load", function () {
 								svg = self.cell.state.markerSvg;
 							}
 							
+							console.log("svg is", svg);
+							
+							var fillColor = self.cell.state.markerFillColor ? self.cell.state.markerFillColor : "blue";
+							var fillOpacity = self.cell.state.markerFillOpacity != null ? parseFloat(self.cell.state.markerFillOpacity) : 0.6;
+							var strokeColor = self.cell.state.strokeColor ? self.cell.state.strokeColor : "blue";
+							var strokeWeight = self.cell.state.markerStrokeWeight != null ? parseFloat(self.cell.state.markerStrokeWeight) : 1;
+							
+							if (self.cell.state.dynamicMarkers) {
+								var dynamic = self.cell.state.dynamicMarkers.filter(function(x) {
+									return x.condition && self.$services.page.isCondition(x.condition, {record: record}, self);
+								})[0];
+								if (dynamic) {
+									if (dynamic.markerFillColor) {
+										fillColor = dynamic.markerFillColor;
+									}
+									if (dynamic.markerFillOpacity) {
+										fillOpacity = parseFloat(dynamic.markerFillOpacity);
+									}
+									if (dynamic.strokeColor) {
+										strokeColor = dynamic.strokeColor;
+									}
+									if (dynamic.markerStrokeWeight) {
+										strokeWeight = parseFloat(dynamic.markerStrokeWeight);
+									}
+									if (dynamic.markerWidth) {
+										width = parseInt(dynamic.markerWidth);
+									}
+									if (dynamic.markerHeight) {
+										height = parseInt(dynamic.markerHeight);
+									}
+									if (dynamic.markerSvg) {
+										svg = dynamic.markerSvg;
+									}
+								}
+							}
+							
 							var goalWidth = 30;
 							var goalHeight = 30;
 							if (width >= height && width > goalWidth) {
@@ -161,14 +218,14 @@ window.addEventListener("load", function () {
 							if (title) {
 								properties.title = title;
 							}
-							
+						
 							// our goal is to have a marker with a maximum dimension of 30
 							var svgMarker = {
 								path: svg,
-								fillColor: self.cell.state.markerFillColor ? self.cell.state.markerFillColor : "blue",
-								fillOpacity: self.cell.state.markerFillOpacity != null ? parseFloat(self.cell.state.markerFillOpacity) : 0.6,
-								strokeColor: self.cell.state.strokeColor ? self.cell.state.strokeColor : "blue",
-								strokeWeight: self.cell.state.markerStrokeWeight != null ? parseFloat(self.cell.state.markerStrokeWeight) : 1,
+								fillColor: fillColor,
+								fillOpacity: fillOpacity,
+								strokeColor: strokeColor,
+								strokeWeight: strokeWeight,
 								rotation: 0,
 								// default measurements of this marker are 384, 512
 								scale: scale,
@@ -193,32 +250,38 @@ window.addEventListener("load", function () {
 								marker.$radius = circle;
 							}
 							
-							console.log("circle is", circle);
+							
 							marker.setMap(self.map);
 							marker.addListener("click", function() {
 								self.select(record);
-								if (self.cell.state.fields && self.cell.state.fields.length > 0) {
-									var component = new nabu.page.views.PageFields({ propsData: {
-											page: nabu.utils.objects.deepClone(self.page),
-											cell: nabu.utils.objects.deepClone(self.cell),
-											edit: false,
-											data: record,
-											label: true
-										},
-										ready: function() {
-											var content = this.$el.outerHTML;
-											console.log("rendering content", content);
-											var info = new google.maps.InfoWindow({ content: content });
-											info.open({
-												anchor: marker,
-												map: self.map,
-												shouldFocus: false
-											});
-										}
-									});
-									var div = document.createElement("div");
-									div.setAttribute("class", "google-map-popup");
-									component.$mount(div);
+								if (showingMarkers.indexOf(marker) < 0) {
+									showingMarkers.push(marker);
+									if (self.cell.state.fields && self.cell.state.fields.length > 0) {
+										var component = new nabu.page.views.PageFields({ propsData: {
+												page: nabu.utils.objects.deepClone(self.page),
+												cell: nabu.utils.objects.deepClone(self.cell),
+												edit: false,
+												data: record,
+												label: true
+											},
+											ready: function() {
+												var content = this.$el.outerHTML;
+												var info = new google.maps.InfoWindow({ content: content });
+												info.open({
+													anchor: marker,
+													map: self.map,
+													shouldFocus: false
+												});
+												info.addListener('closeclick', function() {
+													showingMarkers.splice(showingMarkers.indexOf(marker), 1);
+												});
+											}
+										});
+										var div = document.createElement("div");
+										div.setAttribute("class", "google-map-popup");
+										component.$mount(div);
+										self.componentsToDestroy.push(component);
+									}
 								}
 							});
 						}

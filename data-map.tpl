@@ -40,16 +40,34 @@
 				<n-form-switch v-model="cell.state.fullscreenControl" label="Show fullscreen control"/>
 				<n-form-switch v-model="cell.state.clusterMarkers" label="Cluster markers"/>
 				
-				<n-form-text v-model="cell.state.markerFillColor" label="Marker fill color" :timeout="600" placeholder="blue"/>
-				<n-form-text v-model="cell.state.markerFillOpacity" label="Marker fill opacity" :timeout="600" placeholder="1"/>
-				<n-form-text v-model="cell.state.strokeColor" label="Marker stroke color" :timeout="600" placeholder="darkblue"/>
-				<n-form-text v-model="cell.state.strokeWeight" label="Marker stroke weight" :timeout="600" placeholder="1"/>
 
 				<n-form-ace v-model="cell.state.styleArray" label="Style Array" mode="json" info="Style arrays can be found on for example https://snazzymaps.com/" />
 				
-				<n-form-ace v-model="cell.state.markerSvg" label="Marker svg" info="You can get an svg from for example fontawesome or material icons. You need the M... path that is inside"/>
-				<n-form-text v-model="cell.state.markerWidth" label="The native width of the marker" placeholder="30" :timeout="60"/>
-				<n-form-text v-model="cell.state.markerHeight" label="The native height of the marker" placeholder="30" :timeout="60"/>
+				<n-form-text v-model="cell.state.markerFillColor" label="Default marker fill color" :timeout="600" placeholder="blue"/>
+				<n-form-text v-model="cell.state.markerFillOpacity" label="Default marker fill opacity" :timeout="600" placeholder="A decimal between 0-1"/>
+				<n-form-text v-model="cell.state.strokeColor" label="Default marker stroke color" :timeout="600" placeholder="darkblue"/>
+				<n-form-text v-model="cell.state.strokeWeight" label="Default marker stroke weight" :timeout="600" placeholder="A decimal, e.g. 1"/>
+				<n-form-ace v-model="cell.state.markerSvg" label="Default marker svg" info="You can get an svg from for example fontawesome or material icons. You need the M... path that is inside"/>
+				<n-form-text v-model="cell.state.markerWidth" label="The native width of the default marker" placeholder="30" :timeout="60"/>
+				<n-form-text v-model="cell.state.markerHeight" label="The native height of the default marker" placeholder="30" :timeout="60"/>
+			</n-collapsible>
+			<n-collapsible class="padded" title="Dynamic Markers">
+				<div v-if="cell.state.dynamicMarkers">
+					<div v-for="marker in cell.state.dynamicMarkers" class="list-row">
+						<n-form-text v-model="marker.condition" label="Marker condition" :timeout="600" placeholder="E.g. state.record.something == true"/>
+						<n-form-text v-model="marker.markerFillColor" label="Marker fill color" :timeout="600" placeholder="blue"/>
+						<n-form-text v-model="marker.markerFillOpacity" label="Marker fill opacity" :timeout="600" placeholder="1"/>
+						<n-form-text v-model="marker.strokeColor" label="Marker stroke color" :timeout="600" placeholder="darkblue"/>
+						<n-form-text v-model="marker.strokeWeight" label="Marker stroke weight" :timeout="600" placeholder="1"/>
+						<n-form-ace v-model="marker.markerSvg" label="Marker svg" info="You can get an svg from for example fontawesome or material icons. You need the M... path that is inside"/>
+						<n-form-text v-model="marker.markerWidth" label="The native width of the marker" placeholder="30" :timeout="60"/>
+						<n-form-text v-model="marker.markerHeight" label="The native height of the marker" placeholder="30" :timeout="60"/>
+						<span @click="cell.state.dynamicMarkers.splice(cell.state.dynamicMarkers.indexOf(marker), 1)" class="fa fa-times"></span>
+					</div>
+				</div>
+				<div class="list-actions">
+					<button @click="addDynamicMarker"><span class="fa fa-plus"></span>Marker</button>
+				</div>
 			</n-collapsible>
 		</div>
 	</data-common-configure>

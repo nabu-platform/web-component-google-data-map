@@ -74,7 +74,7 @@
 </template>
 
 <template id="google-data-map">
-	<div class="google-data-map">
+	<div class="google-data-map-container">
 		<data-common-header :page="page" :parameters="parameters" :cell="cell"
 				:edit="edit"
 				:records="records"

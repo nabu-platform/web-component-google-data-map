@@ -170,8 +170,6 @@ window.addEventListener("load", function () {
 								svg = self.cell.state.markerSvg;
 							}
 							
-							console.log("svg is", svg);
-							
 							var fillColor = self.cell.state.markerFillColor ? self.cell.state.markerFillColor : "blue";
 							var fillOpacity = self.cell.state.markerFillOpacity != null ? parseFloat(self.cell.state.markerFillOpacity) : 0.6;
 							var strokeColor = self.cell.state.strokeColor ? self.cell.state.strokeColor : "blue";
@@ -265,8 +263,46 @@ window.addEventListener("load", function () {
 												label: true
 											},
 											ready: function() {
-												var content = this.$el.outerHTML;
-												var info = new google.maps.InfoWindow({ content: content });
+												//var content = this.$el.outerHTML;
+												var container = document.createElement("div");
+												container.setAttribute("class", "google-map-marker-popup");
+												var content = this.$el;
+												container.appendChild(content);
+												if (self.recordActions.length) {
+													var buttons = document.createElement("div");
+													buttons.setAttribute("class", "actions");
+													self.recordActions.forEach(function(action) {
+														if (!action.condition || self.$services.page.isCondition(action.condition, {record:record}, $self)) {
+															var button = document.createElement("button");
+															var clazz = "p-button";
+															if (action.class) {
+																clazz += " " + action.class;
+															}
+															else {
+																clazz += " inline";
+															}
+															if (action.icon && action.label) {
+																clazz += " has-icon";
+															}
+															button.setAttribute("class", clazz);
+															
+															var html = "";
+															if (action.icon) {
+																html += "<span class='fa '" + action.icon + "'></span>";
+															}
+															if (action.label) {
+																html += "<label>" + self.$services.page.translate(action.label) + "</label>";
+															}
+															button.innerHTML = html;
+															button.addEventListener("click", function(event) {
+																self.trigger(action, record, self.cell.state.batchSelectionColumn != null && self.actionHovering)	;
+															});
+															buttons.appendChild(button);
+														}
+													});
+													container.appendChild(buttons);
+												}
+												var info = new google.maps.InfoWindow({ content: container });
 												info.open({
 													anchor: marker,
 													map: self.map,

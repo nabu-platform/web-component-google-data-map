@@ -12,6 +12,23 @@
 		}, 
 		"data-map.js": {
 			"url": "data-map.js"
+		},
+		"googlemaps": {
+			"m1.png": {
+				"url": "m1.png"
+			},
+			"m2.png": {
+				"url": "m2.png"
+			},
+			"m3.png": {
+				"url": "m3.png"
+			},
+			"m4.png": {
+				"url": "m4.png"
+			},
+			"m5.png": {
+				"url": "m5.png"
+			}
 		}
 	}
 }

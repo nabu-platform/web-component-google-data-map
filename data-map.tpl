@@ -39,6 +39,8 @@
 				
 				<n-form-switch v-model="cell.state.fullscreenControl" label="Show fullscreen control"/>
 				<n-form-switch v-model="cell.state.clusterMarkers" label="Cluster markers"/>
+				<n-form-combo v-if="!cell.state.customClusterMarkerPath" v-model="cell.state.defaultClusterMarkerPath" label="Predefined cluster markers" :items='[{name: "Default", path:"${server.root()}resources/googlemaps/m"}, {name: "Pastel", path:"${server.root()}resources/googlemaps/p"}]' :formatter="function(x) { return x.name }" :extracter="function(x) { return x.path }"/>
+				<n-form-text v-if="!cell.state.defaultClusterMarkerPath" v-model="cell.state.customClusterMarkerPath" label="Custom cluster marker path"/>
 				
 
 				<n-form-ace v-model="cell.state.styleArray" label="Style Array" mode="json" info="Style arrays can be found on for example https://snazzymaps.com/" />

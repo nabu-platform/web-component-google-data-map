@@ -363,8 +363,15 @@ window.addEventListener("load", function () {
 						self.clusterer = null;
 					}
 					if (self.cell.state.clusterMarkers) {
+						var markerPath = self.cell.state.customClusterMarkerPath;
+						if (!markerPath) {
+							markerPath = self.cell.state.defaultClusterMarkerPath;
+						}
+						if (!markerPath) {
+							markerPath = "${server.root()}resources/googlemaps/m";
+						}
 						new MarkerClusterer(self.map, allMarkers, {
-							imagePath: "${server.root()}resources/googlemaps/m"
+							imagePath: markerPath
 						});
 					}
 					
